@@ -490,5 +490,15 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long u
     mvpBackupMapPoints.clear();
 }
 
+void Map::PrintMapDetails()
+{
+    cout << "Map Points" << std::endl;
+    for (auto it = mspMapPoints.begin(); it != mspMapPoints.end(); ++it) 
+    {
+        MapPoint* mMP = *it;
+        std::cout << "MapPoint World Position: [" << *it->mWorldPos.x() << ", " <<  *it->mWorldPos.y() << ", " << *it->mWorldPos.z() << std::endl;
+    }
+}
+
 
 } //namespace ORB_SLAM3
