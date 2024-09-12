@@ -490,7 +490,7 @@ void Map::PostLoad(KeyFrameDatabase* pKFDB, ORBVocabulary* pORBVoc/*, map<long u
     mvpBackupMapPoints.clear();
 }
 
-void Map::PrintMapDetails()
+void Map::PrintCurrentMapDetails()
 {
     cout << "Map Points" << std::endl;
     for (auto it = mspMapPoints.begin(); it != mspMapPoints.end(); ++it) 
