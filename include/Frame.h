@@ -189,6 +189,9 @@ private:
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+    //Access to openCV images for debugging
+    const cv::Mat* mpImGray;
+
     // Vocabulary used for relocalization.
     ORBVocabulary* mpORBvocabulary;
 

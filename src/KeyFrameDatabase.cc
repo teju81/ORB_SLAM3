@@ -103,7 +103,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
     list<KeyFrame*> lKFsSharingWords;
 
     // Search all keyframes that share a word with current keyframes
-    // Discard keyframes connected to the query keyframe
+    // Discard keyframes NOT connected to the query keyframe
     {
         unique_lock<mutex> lock(mMutex);
 
@@ -606,6 +606,12 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
     list<KeyFrame*> lKFsSharingWords;
     set<KeyFrame*> spConnectedKF;
 
+    // Create a large 2x1 canvas (height of the largest image and width of two images combined)
+    cv::Mat canvas = cv::Mat::zeros(pKF->mpImGray->rows, pKF->mpImGray->cols*2, pKF->mpImGray->type());
+
+    // Copy img1 to the left side of the canvas
+    pKF->mpImGray->copyTo(canvas(cv::Rect(0, 0, pKF->mpImGray->cols, pKF->mpImGray->rows)));
+
     // Search all keyframes that share a word with current frame
     {
         unique_lock<mutex> lock(mMutex);
@@ -619,6 +625,11 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
             for(list<KeyFrame*>::iterator lit=lKFs.begin(), lend= lKFs.end(); lit!=lend; lit++)
             {
                 KeyFrame* pKFi=*lit;
+                
+                // cv::imshow("Retrieved Connected Key Frame", *pKFi->mpImGray);
+                // cv::waitKey(30);
+                // float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+                // cout << " Similarity score between query KF with FID: " << pKF->mnFrameId << " and retrieved KF with FID: " << pKFi->mnFrameId << " is " << si << endl;
 
                 if(pKFi->mnPlaceRecognitionQuery!=pKF->mnId)
                 {
@@ -635,7 +646,11 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
         }
     }
     if(lKFsSharingWords.empty())
+    {
+        cv::imshow("Null Loop Closure Result", canvas);
+        cv::waitKey(30);
         return;
+    }
 
     // Only compare against those keyframes that share enough words
     int maxCommonWords=0;
@@ -655,11 +670,14 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
     for(list<KeyFrame*>::iterator lit=lKFsSharingWords.begin(), lend= lKFsSharingWords.end(); lit!=lend; lit++)
     {
         KeyFrame* pKFi = *lit;
+        // cv::imshow("Retrieved Key Frame with shared words", *pKFi->mpImGray);
+        // cv::waitKey(30);
 
         if(pKFi->mnPlaceRecognitionWords>minCommonWords)
         {
             nscores++;
             float si = mpVoc->score(pKF->mBowVec,pKFi->mBowVec);
+            //cout << " Similarity score between query KF with FID: " << pKF->mnFrameId << " and retrieved KF with FID: " << pKFi->mnFrameId << " is " << si << endl;
             pKFi->mPlaceRecognitionScore=si;
             lScoreAndMatch.push_back(make_pair(si,pKFi));
         }
@@ -683,6 +701,8 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
         for(vector<KeyFrame*>::iterator vit=vpNeighs.begin(), vend=vpNeighs.end(); vit!=vend; vit++)
         {
             KeyFrame* pKF2 = *vit;
+            // cv::imshow("Retrieved Best Covisible Key Frames", *pKFi->mpImGray);
+            // cv::waitKey(30);
             if(pKF2->mnPlaceRecognitionQuery!=pKF->mnId)
                 continue;
 
@@ -709,6 +729,15 @@ void KeyFrameDatabase::DetectNBestCandidates(KeyFrame *pKF, vector<KeyFrame*> &v
     while(i < lAccScoreAndMatch.size() && (vpLoopCand.size() < nNumCandidates || vpMergeCand.size() < nNumCandidates))
     {
         KeyFrame* pKFi = it->second;
+        if (i == 0)
+        {
+            // Copy img2 to the right side of the canvas
+            pKFi->mpImGray->copyTo(canvas(cv::Rect(pKFi->mpImGray->cols, 0, pKFi->mpImGray->cols, pKFi->mpImGray->rows)));
+            cv::imshow("Retrieved Matching Key Frame", canvas);
+            cv::waitKey(30);
+            cout << " Match found between Key frames (" << pKF->mnFrameId << ", " << pKFi->mnFrameId << ")" << endl;
+        }
+
         if(pKFi->isBad())
             continue;
 

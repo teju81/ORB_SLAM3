@@ -307,6 +307,9 @@ public:
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
+    
+    //Access to openCV images for debugging
+    const cv::Mat* mpImGray;
 
     static long unsigned int nNextId;
     long unsigned int mnId;
