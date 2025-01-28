@@ -106,20 +106,20 @@ void KeyFrame::ComputeBoW()
     }
 }
 
-void KeyFrame::SetPose(const Sophus::SE3f &Tcw)
-{
-    unique_lock<mutex> lock(mMutexPose);
+// void KeyFrame::SetPose(const Sophus::SE3f &Tcw)
+// {
+//     unique_lock<mutex> lock(mMutexPose);
 
-    mTcw = Tcw;
-    mRcw = mTcw.rotationMatrix();
-    mTwc = mTcw.inverse();
-    mRwc = mTwc.rotationMatrix();
+//     mTcw = Tcw;
+//     mRcw = mTcw.rotationMatrix();
+//     mTwc = mTcw.inverse();
+//     mRwc = mTwc.rotationMatrix();
 
-    if (mImuCalib.mbIsSet) // TODO Use a flag instead of the OpenCV matrix
-    {
-        mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
-    }
-}
+//     if (mImuCalib.mbIsSet) // TODO Use a flag instead of the OpenCV matrix
+//     {
+//         mOwb = mRwc * mImuCalib.mTcb.translation() + mTwc.translation();
+//     }
+// }
 
 void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw)
 {
@@ -128,22 +128,22 @@ void KeyFrame::SetVelocity(const Eigen::Vector3f &Vw)
     mbHasVelocity = true;
 }
 
-Sophus::SE3f KeyFrame::GetPose()
-{
-    unique_lock<mutex> lock(mMutexPose);
-    return mTcw;
-}
+// Sophus::SE3f KeyFrame::GetPose()
+// {
+//     unique_lock<mutex> lock(mMutexPose);
+//     return mTcw;
+// }
 
-Sophus::SE3f KeyFrame::GetPoseInverse()
-{
-    unique_lock<mutex> lock(mMutexPose);
-    return mTwc;
-}
+// Sophus::SE3f KeyFrame::GetPoseInverse()
+// {
+//     unique_lock<mutex> lock(mMutexPose);
+//     return mTwc;
+// }
 
-Eigen::Vector3f KeyFrame::GetCameraCenter(){
-    unique_lock<mutex> lock(mMutexPose);
-    return mTwc.translation();
-}
+// Eigen::Vector3f KeyFrame::GetCameraCenter(){
+//     unique_lock<mutex> lock(mMutexPose);
+//     return mTwc.translation();
+// }
 
 Eigen::Vector3f KeyFrame::GetImuPosition()
 {
@@ -163,15 +163,63 @@ Sophus::SE3f KeyFrame::GetImuPose()
     return mTwc * mImuCalib.mTcb;
 }
 
-Eigen::Matrix3f KeyFrame::GetRotation(){
+// Eigen::Matrix3f KeyFrame::GetRotation(){
+//     unique_lock<mutex> lock(mMutexPose);
+//     return mRcw;
+// }
+
+// Eigen::Vector3f KeyFrame::GetTranslation()
+// {
+//     unique_lock<mutex> lock(mMutexPose);
+//     return mTcw.translation();
+// }
+
+
+void KeyFrame::SetPose(const cv::Mat &Tcw_) {
     unique_lock<mutex> lock(mMutexPose);
-    return mRcw;
+    Tcw_.copyTo(Tcw);
+    Twc = Tcw.inv();
+    // cv::Mat Rcw = Tcw.rowRange(0, 3).colRange(0, 3);
+    // cv::Mat tcw = Tcw.rowRange(0, 3).col(3);
+    // cv::Mat Rwc = Rcw.t();
+    // Ow          = -Rwc * tcw;
+    Ow = Twc.rowRange(0, 3).col(3);
+
+    // Twc = cv::Mat::eye(4, 4, Tcw.type());
+    // Rwc.copyTo(Twc.rowRange(0, 3).colRange(0, 3));
+    // Ow.copyTo(Twc.rowRange(0, 3).col(3));
+    cv::Mat center = (cv::Mat_<float>(4, 1) << mHalfBaseline, 0, 0, 1);
+    Cw             = Twc * center;
 }
 
-Eigen::Vector3f KeyFrame::GetTranslation()
-{
+cv::Mat KeyFrame::GetPose() {
     unique_lock<mutex> lock(mMutexPose);
-    return mTcw.translation();
+    return Tcw.clone();
+}
+
+cv::Mat KeyFrame::GetPoseInverse() {
+    unique_lock<mutex> lock(mMutexPose);
+    return Twc;
+}
+
+cv::Mat KeyFrame::GetCameraCenter() {
+    unique_lock<mutex> lock(mMutexPose);
+    return Ow.clone();
+}
+
+cv::Mat KeyFrame::GetStereoCenter() {
+    unique_lock<mutex> lock(mMutexPose);
+    return Cw.clone();
+}
+
+cv::Mat KeyFrame::GetRotation() {
+    unique_lock<mutex> lock(mMutexPose);
+    return Tcw.rowRange(0, 3).colRange(0, 3).clone();
+}
+
+cv::Mat KeyFrame::GetTranslation() {
+    unique_lock<mutex> lock(mMutexPose);
+    return Tcw.rowRange(0, 3).col(3).clone();
 }
 
 Eigen::Vector3f KeyFrame::GetVelocity()
