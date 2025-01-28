@@ -1,5 +1,7 @@
 opencv_dir=$1
 install_path=$2
++echo ${opencv_dir}
++echo ${install_path}
 echo "Configuring and building Thirdparty/DBoW2 ..."
 
 cd Thirdparty/DBoW2
