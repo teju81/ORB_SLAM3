@@ -161,6 +161,11 @@ public:
     // True if local mapping is deactivated and we are performing only localization
     bool mbOnlyTracking;
 
+    // True if use icp pose as init pose
+    bool mbUseIcpPose;
+    bool mbicpMixMode;
+    int mkeyframeInterval;
+
     void Reset(bool bLocMap = false);
     void ResetActiveMap(bool bLocMap = false);
 

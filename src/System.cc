@@ -241,6 +241,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 }
 
+void System::setIcpMode(bool icpMix) {
+    mpTracker->mbicpMixMode = icpMix;
+}
+
 Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
     if(mSensor!=STEREO && mSensor!=IMU_STEREO)
@@ -1323,6 +1327,17 @@ int System::GetTrackingState()
     unique_lock<mutex> lock(mMutexState);
     return mTrackingState;
 }
+
+vector<KeyFrame*> System::GetKeyFrames() const
+{
+    return mpMap->GetAllKeyFrames();
+}
+
+Tracking* System::GetTracker() const
+{
+    return mpTracker;
+}
+
 
 vector<MapPoint*> System::GetTrackedMapPoints()
 {
